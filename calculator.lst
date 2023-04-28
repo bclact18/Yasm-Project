@@ -1,0 +1,205 @@
+     1                                 %line 1+1 calculator.asm
+     2                                 
+     3                                 
+     4                                 
+     5                                 
+     6                                 
+     7                                 
+     8                                 
+     9                                 
+    10                                 
+    11                                 
+    12                                 
+    13                                 
+    14                                 %line 18+1 calculator.asm
+    15                                 
+    16                                 %line 24+1 calculator.asm
+    17                                 
+    18                                 [section .data]
+    19 00000000 506C6561736520656E-     prompt db "Please enter the equation: ", 0
+    20 00000000 746572207468652065-
+    21 00000000 71756174696F6E3A20-
+    22 00000000 00                 
+    23 0000001C 1B00000000000000        lenP dq $-prompt-1
+    24 00000024 496E70757420657272-     errorMessage1 db "Input error, Please make sure the input format is ", 0x22, "a+b-...xc/d=", 0x22,
+    25 00000024 6F722C20506C656173-
+    26 00000024 65206D616B65207375-
+    27 00000024 72652074686520696E-
+    28 00000024 70757420666F726D61-
+    29 00000024 742069732022612B62-
+    30 00000024 2D2E2E2E78632F643D-
+    31 00000024 22                 
+    32 00000064 0A4E6F207370616365-     db 0xA, "No space is allow in the input.", 0xA,
+    33 00000064 20697320616C6C6F77-
+    34 00000064 20696E207468652069-
+    35 00000064 6E7075742E0A       
+    36 00000085 457175616C20736967-     db "Equal sign is needed at the end of equation.", 0xA, 0
+    37 00000085 6E206973206E656564-
+    38 00000085 656420617420746865-
+    39 00000085 20656E64206F662065-
+    40 00000085 71756174696F6E2E0A-
+    41 00000085 00                 
+    42 000000B3 8E00000000000000        lenE1 dq $-errorMessage1-1
+    43 000000BB 0300000000000000        lenA dq 3
+    44 000000C3 0000000000000000        input_actual dq 0
+    45 000000CB 00                      negative db 0
+    46                                 
+    47 000000CC 0A                      NL db 0xA
+    48                                 
+    49                                  SYS_READ equ 0
+    50                                  SYS_WRITE equ 1
+    51                                  SYS_EXIT equ 60
+    52                                 
+    53                                  STD_IN equ 0
+    54                                  STD_OUT equ 1
+    55                                  INPUT_LEN equ 50
+    56                                 [section .bss]
+    57 00000000 <gap>                   input resb INPUT_LEN
+    58 00000032 <gap>                   answer resb 60
+    59                                 [section .text]
+    60                                 [global _start]
+    61                                 _start:
+    62 00000000 48C7C6[00000000]        mov rsi, prompt
+    63 00000007 488B1425[00000000]      mov rdx, qword[lenP]
+    64 0000000F 48C7C001000000          mov rax, SYS_WRITE
+    65                                 %line 53+0 calculator.asm
+    66 00000016 48C7C701000000          mov rdi, STD_OUT
+    67 0000001D 0F05                    syscall
+    68                                 %line 54+1 calculator.asm
+    69                                 
+    70 0000001F 48C7C000000000          mov rax, SYS_READ
+    71 00000026 48C7C700000000          mov rdi, STD_IN
+    72 0000002D 48C7C6[00000000]        mov rsi, input
+    73 00000034 48C7C232000000          mov rdx, INPUT_LEN
+    74 0000003B 0F05                    syscall
+    75                                 
+    76 0000003D 48FFC8                  dec rax
+    77 00000040 48890425[00000000]      mov qword[input_actual], rax
+    78                                 
+    79 00000048 48C7C6[00000000]        mov rsi, NL
+    80                                 %line 64+0 calculator.asm
+    81 0000004F 48C7C201000000          mov rdx, 1
+    82 00000056 48C7C001000000          mov rax, SYS_WRITE
+    83 0000005D 48C7C701000000          mov rdi, STD_OUT
+    84 00000064 0F05                    syscall
+    85                                 %line 65+1 calculator.asm
+    86                                 
+    87 00000066 48C7C000000000          mov rax, 0
+    88 0000006D 48C7C6[00000000]        mov rsi, input
+    89 00000074 49C7C000000000          mov r8, 0
+    90 0000007B 49C7C100000000          mov r9, 0
+    91 00000082 8A06                    mov al, byte[rsi]
+    92 00000084 240F                    and al, 0x0F
+    93 00000086 48FFC6                  inc rsi
+    94                                 calculation:
+    95 00000089 49C7C000000000          mov r8, 0
+    96 00000090 49C7C100000000          mov r9, 0
+    97 00000097 448A06                  mov r8b, byte[rsi]
+    98 0000009A 48FFC6                  inc rsi
+    99 0000009D 448A0E                  mov r9b, byte[rsi]
+   100 000000A0 48FFC6                  inc rsi
+   101 000000A3 4180F83D                cmp r8b, 0x3D
+   102 000000A7 744F                    je endOfCal
+   103                                 
+   104 000000A9 4180F930                cmp r9b, 0x30
+   105 000000AD 0F8CD1000000            jl inputError1
+   106 000000B3 4180F939                cmp r9b, 0x39
+   107 000000B7 0F8FC7000000            jg inputError1
+   108                                 
+   109 000000BD 4180E10F                and r9b, 0x0F
+   110                                 
+   111 000000C1 4180F82A                cmp r8b, 0x2A
+   112 000000C5 741B                    je multing
+   113 000000C7 4180F878                cmp r8b, 0x78
+   114 000000CB 7415                    je multing
+   115 000000CD 4180F82B                cmp r8b, 0x2B
+   116 000000D1 7414                    je adding
+   117 000000D3 4180F82D                cmp r8b, 0x2D
+   118 000000D7 7413                    je subing
+   119 000000D9 4180F82F                cmp r8b, 0x2F
+   120 000000DD 7412                    je diving
+   121 000000DF E9A1000000              jmp inputError1
+   122                                 
+   123                                 multing:
+   124 000000E4 49F7E9                  imul r9
+   125 000000E7 EB9E                    jmp calculation
+   126                                 adding:
+   127 000000E9 4C01C8                  add rax, r9
+   128 000000EC EB99                    jmp calculation
+   129                                 subing:
+   130 000000EE 4C29C8                  sub rax, r9
+   131 000000F1 EB94                    jmp calculation
+   132                                 diving:
+   133 000000F3 4899                    cqo
+   134 000000F5 49F7F9                  idiv r9
+   135 000000F8 EB8D                    jmp calculation
+   136                                 
+   137                                 endOfCal:
+   138 000000FA 4883F800                cmp rax, 0
+   139 000000FE 7D09                    jge pos
+   140 00000100 C60425[00000000]01      mov byte[negative], 1
+   141 00000108 48F7D8                  neg rax
+   142                                 pos:
+   143 0000010B 49C7C20A000000          mov r10, 10
+   144 00000112 49C7C1[00000000]        mov r9, answer
+   145 00000119 41C6010A                mov byte[r9], 0xA
+   146 0000011D 49FFC1                  inc r9
+   147                                 
+   148                                 loopAscii:
+   149 00000120 4899                    cqo
+   150 00000122 49F7F2                  div r10
+   151 00000125 418811                  mov byte[r9], dl
+   152 00000128 41800130                add byte[r9], 0x30
+   153                                 
+   154 0000012C 49FFC1                  inc r9
+   155 0000012F 4883F800                cmp rax, 0
+   156 00000133 77E9                    ja loopAscii
+   157                                 
+   158 00000135 48C7C6[00000000]        mov rsi, input
+   159 0000013C 488B1425[00000000]      mov rdx, qword[input_actual]
+   160 00000144 48C7C001000000          mov rax, SYS_WRITE
+   161                                 %line 139+0 calculator.asm
+   162 0000014B 48C7C701000000          mov rdi, STD_OUT
+   163 00000152 0F05                    syscall
+   164                                 %line 140+1 calculator.asm
+   165                                 
+   166                                 
+   167 00000154 803C25[00000000]00      cmp byte[negative], 0
+   168 0000015C 7402                    je loopPrint
+   169 0000015E 41C6012D                mov byte[r9], 0x2D
+   170                                 
+   171                                 loopPrint:
+   172 00000162 4C89CE                  mov rsi, r9
+   173 00000165 48C7C201000000          mov rdx, 1
+   174 0000016C 48C7C001000000          mov rax, SYS_WRITE
+   175                                 %line 149+0 calculator.asm
+   176 00000173 48C7C701000000          mov rdi, STD_OUT
+   177 0000017A 0F05                    syscall
+   178                                 %line 150+1 calculator.asm
+   179                                 
+   180 0000017C 49FFC9                  dec r9
+   181 0000017F 4981F9[00000000]        cmp r9, answer
+   182 00000186 73D8                    jae loopPrint
+   183 00000188 EB1F                    jmp exit
+   184                                 
+   185                                 inputError1:
+   186 0000018A 48C7C6[00000000]        mov rsi, errorMessage1
+   187 00000191 488B1425[00000000]      mov rdx, qword[lenE1]
+   188 00000199 48C7C001000000          mov rax, SYS_WRITE
+   189                                 %line 159+0 calculator.asm
+   190 000001A0 48C7C701000000          mov rdi, STD_OUT
+   191 000001A7 0F05                    syscall
+   192                                 %line 160+1 calculator.asm
+   193 000001A9 EBFE                    jmp exit
+   194                                 
+   195                                 exit:
+   196 000001AB 48C7C6[00000000]        mov rsi, NL
+   197                                 %line 163+0 calculator.asm
+   198 000001B2 48C7C201000000          mov rdx, 1
+   199 000001B9 48C7C001000000          mov rax, SYS_WRITE
+   200 000001C0 48C7C701000000          mov rdi, STD_OUT
+   201 000001C7 0F05                    syscall
+   202                                 %line 164+1 calculator.asm
+   203 000001C9 48C7C03C000000          mov rax, SYS_EXIT
+   204 000001D0 48C7C700000000          mov rdi, 0
+   205 000001D7 0F05                    syscall

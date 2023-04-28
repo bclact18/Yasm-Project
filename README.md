@@ -1,1 +1,1 @@
-This is the CPSC240 final Project
+This is the calculator written in Yasm for CPSC240 final Project
